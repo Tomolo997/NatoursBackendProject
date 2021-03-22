@@ -6,9 +6,12 @@ const app = express();
 //routes => determine on how the application reacts based on the URL request from an client
 
 //middleware
-app.use(morgan('dev'));
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+}
 
 app.use(express.json());
+app.use(express.static(`${__dirname}/public`));
 //The order of thw middlware is important, so global middlewares are at the beginning
 app.use((req, res, next) => {
   //if there is a third argument called nextm, the express knows its the middleware
