@@ -2,7 +2,7 @@ const express = require('express');
 const tourController = require('../controllers/tourController');
 const router = express.Router();
 //checks for valid or invalid id
-router.param('id', tourController.checkID);
+// router.param('id', tourController.checkID);
 
 //create a check body => if the body contains the name and price property
 
