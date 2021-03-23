@@ -4,7 +4,7 @@ exports.getAllTours = async (req, res) => {
   try {
     //BUILD THE QUERY
     //take all the filed out of the objet and create a new object
-    //!)filtering
+    //1)FILTERING
     const queryObject = { ...req.query };
     const exludedFields = ['page', 'sort', 'limit', 'fields'];
     exludedFields.forEach((el) => delete queryObject[el]);
@@ -14,14 +14,31 @@ exports.getAllTours = async (req, res) => {
     queryString = queryString.replace(/\b(lt|lte|gte|gt)\b/g, (match) => {
       return `$${match}`;
     });
-    console.log(queryObject);
-    console.log(JSON.parse(queryString));
 
-    //{difficulty:"easy",duration:{$gte:5}}
-    //{difficulty:"easy",duration:{gte:5}} => response from [gte]
-    //replace all of the gte, gt, lte,lt
+    let query = Tour.find(JSON.parse(queryString));
 
-    const query = Tour.find(JSON.parse(queryString));
+    //2) SORTING
+    if (req.query.sort) {
+      //query.sort(price) => asscending , -price => descending
+      const sortBy = req.query.sort.split(',').join(' ');
+      query = query.sort(sortBy);
+      //sort("price,ratingsAverage")
+      // ====> sort by price and if the pricesa re the same, then sort by ratingsaverage
+      //localhost:3000/api/v1/tours?sort=price,ratingsAverage
+    } else {
+      //default ordered by the -createdAt
+      query = query.sort('-createdAt');
+    }
+
+    //3)FIELD LIMITING
+    if (req.query.fields) {
+      //to include the strings in the response
+      const fields = req.query.fields.split(',').join(' ');
+      query = query.select(fields);
+    } else {
+      query = query.select('-__v');
+    }
+
     //execute query
     const tours = await query;
     //Send RESPONSE
