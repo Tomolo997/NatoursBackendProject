@@ -1,46 +1,25 @@
 const Tour = require('../models/tourModel');
+const APIFeatures = require('../utils/APIFeatures');
+exports.aliasTopTours = async (req, res, next) => {
+  req.query.limit = '5';
+  req.query.sort = '-ratingsAverage,price';
+  req.query.fields = 'name,price,ratingsAverage,summary,difficulty';
+  next();
+};
+
+//create a class for API features
 
 exports.getAllTours = async (req, res) => {
   try {
-    //BUILD THE QUERY
-    //take all the filed out of the objet and create a new object
-    //1)FILTERING
-    const queryObject = { ...req.query };
-    const exludedFields = ['page', 'sort', 'limit', 'fields'];
-    exludedFields.forEach((el) => delete queryObject[el]);
-
-    //Advanced filtering
-    let queryString = JSON.stringify(queryObject);
-    queryString = queryString.replace(/\b(lt|lte|gte|gt)\b/g, (match) => {
-      return `$${match}`;
-    });
-
-    let query = Tour.find(JSON.parse(queryString));
-
-    //2) SORTING
-    if (req.query.sort) {
-      //query.sort(price) => asscending , -price => descending
-      const sortBy = req.query.sort.split(',').join(' ');
-      query = query.sort(sortBy);
-      //sort("price,ratingsAverage")
-      // ====> sort by price and if the pricesa re the same, then sort by ratingsaverage
-      //localhost:3000/api/v1/tours?sort=price,ratingsAverage
-    } else {
-      //default ordered by the -createdAt
-      query = query.sort('-createdAt');
-    }
-
-    //3)FIELD LIMITING
-    if (req.query.fields) {
-      //to include the strings in the response
-      const fields = req.query.fields.split(',').join(' ');
-      query = query.select(fields);
-    } else {
-      query = query.select('-__v');
-    }
-
     //execute query
-    const tours = await query;
+
+    const features = new APIFeatures(Tour.find(), req.query)
+      .filter()
+      .sort()
+      .limitFields()
+      .paginate();
+
+    const tours = await features.query;
     //Send RESPONSE
     res.status(200).json({
       status: 'success',
@@ -126,4 +105,135 @@ exports.deleteTour = async (req, res) => {
       message: 'succesfuly deleted the Tour',
     });
   } catch (error) {}
+};
+
+//aggregation pipeline => matching and grouping
+//Aggregation pipline => used for calculating the statisitcs in the database collection. => avgPrice, avgRaating, max, min
+
+//pipline => each document goes through this pipline and the pipline (atleast group) extracts specific parameters(ratingsAverage,price...) and adds tehm up (if there is a sum, or extracst the max or the min ) and returns them.
+
+exports.getTourStats = async (req, res) => {
+  try {
+    const stats = await Tour.aggregate([
+      //mathc is to select and filter
+      {
+        $match: { ratingsAverage: { $gte: 4.5 } },
+      },
+      {
+        //allows us to group togethers documents using accumulators
+        //acumulators => calculating an average
+        $group: {
+          // in group , null means everyone,
+          //but it can be different _ids => "$difficulty"
+          //we can group our results for different fields
+          // _id: '$ratingsAverage',
+          _id: { $toUpper: '$difficulty' },
+          numTours: {
+            //for each document that is going through this pipline, 1 will be added to this sum counter
+            $sum: 1,
+          },
+          numRatings: {
+            $sum: '$ratingsQuantity',
+          },
+          avgRating: {
+            $avg: '$ratingsAverage',
+          },
+          avgPrice: {
+            $avg: '$price',
+          },
+          minPrice: {
+            $min: '$price',
+          },
+          maxPrice: {
+            $max: '$price',
+          },
+        },
+      },
+      {
+        //it really goes through pipline => one by one, so in sort we already have the results that we specified in the $group
+        $sort: {
+          avgPrice: 1,
+        },
+      },
+      // {
+      //   //we can still duplicate commands => pipline opreators
+      //   $match: { _id: { $ne: 'EASY' } },
+      // },
+    ]);
+
+    res.status(200).json({
+      status: 'succes',
+      data: {
+        stats,
+      },
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: 'fail',
+      message: err,
+    });
+  }
+};
+
+exports.getMonthlyPlan = async (req, res) => {
+  try {
+    const year = req.params.year * 1;
+    const plan = await Tour.aggregate([
+      {
+        //unwind will decuntrsuct an array field from input documents ,adn then output one document for each element in array
+        $unwind: '$startDates',
+      },
+      {
+        $match: {
+          startDates: {
+            $gte: new Date(`${year}-01-01`),
+            $lte: new Date(`${year}-12-31`),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            $month: '$startDates',
+          },
+          numTourStarts: {
+            $sum: 1,
+          },
+          tours: { $push: '$name' },
+        },
+      },
+      {
+        $addFields: {
+          month: '$_id',
+        },
+      },
+      {
+        $project: {
+          //project => menas what to show and what not to show
+          // 0 => not show, 1 => show
+          _id: 0,
+        },
+      },
+      {
+        $sort: {
+          numTourStarts: -1,
+        },
+      },
+      {
+        $limit: 12,
+      },
+    ]);
+
+    res.status(200).json({
+      status: 'succes',
+      data: {
+        plan,
+      },
+    });
+  } catch (error) {
+    res.status(400).json({
+      status: 'fail',
+      message: error,
+    });
+  }
 };

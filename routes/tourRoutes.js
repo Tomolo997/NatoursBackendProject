@@ -7,6 +7,13 @@ const router = express.Router();
 //create a check body => if the body contains the name and price property
 
 router
+  .route('/top-5-cheap')
+  .get(tourController.aliasTopTours, tourController.getAllTours);
+
+router.route('/tour-stats').get(tourController.getTourStats);
+router.route('/monthly-plan/:year').get(tourController.getMonthlyPlan);
+
+router
   .route('/')
   .get(tourController.getAllTours)
   .post(tourController.CreateTour);
