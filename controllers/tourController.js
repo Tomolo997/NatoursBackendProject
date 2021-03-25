@@ -56,26 +56,22 @@ exports.getTour = async (req, res) => {
   }
 };
 
-exports.CreateTour = async (req, res) => {
-  try {
-    //create and save in the DATABASE
-    const newTour = await Tour.create(req.body);
-    //Send back the data
-    res.status(201).json({
-      status: 'success',
-      data: {
-        tour: newTour,
-      },
-    });
-  } catch (error) {
-    // we wan to send bac kteh response
-    res.status(400).json({
-      status: 'fail',
-      message: error,
-    });
-  }
-  //we create a new instance of Tour => so new document
+const catchAsnyc = (fn) => {
+  return (req, res, next) => {
+    fn(req, res, next).catch((err) => next(err));
+  };
 };
+exports.CreateTour = catchAsnyc(async (req, res, next) => {
+  //create and save in the DATABASE
+  const newTour = await Tour.create(req.body);
+  //Send back the data
+  res.status(201).json({
+    status: 'success',
+    data: {
+      tour: newTour,
+    },
+  });
+});
 
 exports.updateTour = async (req, res) => {
   try {

@@ -1,5 +1,7 @@
 const express = require('express');
 const morgan = require('morgan');
+const appError = require('./utils/appError');
+const globalErrorHandler = require('./controllers/errorController');
 const userRouter = require('./routes/userRoutes');
 const tourRouter = require('./routes/tourRoutes');
 const app = express();
@@ -13,12 +15,8 @@ if (process.env.NODE_ENV === 'development') {
 app.use(express.json());
 app.use(express.static(`${__dirname}/public`));
 //The order of thw middlware is important, so global middlewares are at the beginning
-app.use((req, res, next) => {
-  //if there is a third argument called nextm, the express knows its the middleware
-  console.log('hello from middlewre');
-  //we must always pass the next function to go one step more in middleware
-  next();
-});
+
+//error route handling
 
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
@@ -36,5 +34,20 @@ app.use((req, res, next) => {
 //mounting the routes
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
+//after it searched the tourRoutes and userRoutes and it could not be found.
+app.all('*', (req, res, next) => {
+  // res.status(404).json({
+  //   status: 'fail',
+  //   message: `Cant find ${req.originalUrl} on this server`,
+  // });
+  // const err = new Error(`Cant find ${req.originalUrl} on this server`);
+  // err.status = 'fail';
+  // err.statusCode = 404;
+  // //we must pass the err into the next()
+  // //express recognises, that everything that is passed into thge next(), it will always be error , so it skips all of the middleware and goes to the error middlware
+  next(new appError(`Cant find ${req.originalUrl} on this server`, 404));
+});
 
+//error handling middleware
+app.use(globalErrorHandler);
 module.exports = app;
