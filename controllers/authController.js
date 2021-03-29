@@ -81,7 +81,6 @@ exports.protect = catchAsync(async (req, res, next) => {
 
   const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
 
-  console.log(decoded);
   //3) Check if user still exists
   const freshUser = await User.findById(decoded.id);
   if (!freshUser) {
@@ -130,7 +129,6 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
     'host'
   )}/api/vi/users/resetPassword/${resetToken}`;
   const message = `Fortgot your passwords ? Submit a patch request with your new password and password confint to : ${resetURL}`;
-  console.log(resetToken);
   console.log(user.email);
   try {
     await sendEmail({
@@ -180,4 +178,29 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
     status: 'success',
     token,
   });
+});
+
+const createSendToken = (user, statusCode, res) => {
+  const token = signToken(user._id);
+  res.status(statusCode).json({
+    status: 'success',
+    token,
+  });
+};
+
+exports.updatePassword = catchAsync(async (req, res, next) => {
+  //1) get user from collection
+  const user = await User.findById(req.user.id).select('+password');
+  console.log(req.user);
+  //") check if posted curent passowrd is correct"
+  if (!(await user.correctPassword(req.body.passwordCurrent, user.password))) {
+    return next(new appError('Your current password is wrong', 401));
+  }
+  //3) if so update password
+  user.password = req.body.password;
+  user.passwordConfirm = req.body.passwordConfirm;
+  await user.save();
+  //SHOULD NOT USER UPDATE for passwords!
+  //4) log user in, send JWT
+  createSendToken(user, 200, res);
 });
