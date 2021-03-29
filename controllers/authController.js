@@ -5,6 +5,7 @@ const appError = require('../utils/appError');
 const bycrpt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const catchAsync = require('../utils/catchAsync');
+const crypto = require('crypto');
 const { decode } = require('punycode');
 const signToken = (id) => {
   return jwt.sign({ id: id }, process.env.JWT_SECRET, {
@@ -150,4 +151,33 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   }
 });
 
-exports.resetPassword = (req, res, next) => {};
+exports.resetPassword = catchAsync(async (req, res, next) => {
+  //Get user based on the token
+  const hashedToken = crypto
+    .createHash('sha256')
+    .update(req.params.token)
+    .digest('hex');
+
+  const user = await User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpires: { $gt: Date.now() },
+  });
+  //if token has not expirde and there is a use,set the new password
+  if (!user) {
+    return next(new appError('Token is invalid or has expired', 400));
+  }
+  user.password = req.body.password;
+  user.passwordConfirm = req.body.passwordConfirm;
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
+
+  await user.save();
+  //Update changedPasswodAtr propery for the userr,
+
+  //log the user in send JWT
+  const token = signToken(user._id);
+  res.status(200).json({
+    status: 'success',
+    token,
+  });
+});
