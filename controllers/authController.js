@@ -1,4 +1,5 @@
 const { promisify } = require('util');
+const sendEmail = require('../utils/email');
 const User = require('../models/userModel');
 const appError = require('../utils/appError');
 const bycrpt = require('bcryptjs');
@@ -124,6 +125,29 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   const resetToken = user.createPasswordResetToken();
   await user.save({ validateBeforeSave: false });
   //3) send it to users email
+  const resetURL = `${req.protocol}://${req.get(
+    'host'
+  )}/api/vi/users/resetPassword/${resetToken}`;
+  const message = `Fortgot your passwords ? Submit a patch request with your new password and password confint to : ${resetURL}`;
+  console.log(resetToken);
+  console.log(user.email);
+  try {
+    await sendEmail({
+      email: user.email,
+      subject: 'Your password reset token',
+      message,
+    });
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Token sent to email!',
+    });
+  } catch (error) {
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+    return next(new appError(error.message, 500));
+  }
 });
 
 exports.resetPassword = (req, res, next) => {};
