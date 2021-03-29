@@ -1,6 +1,7 @@
 const express = require('express');
 const tourController = require('../controllers/tourController');
 const router = express.Router();
+const authController = require('../controllers/authController');
 //checks for valid or invalid id
 // router.param('id', tourController.checkID);
 
@@ -15,7 +16,8 @@ router.route('/monthly-plan/:year').get(tourController.getMonthlyPlan);
 
 router
   .route('/')
-  .get(tourController.getAllTours)
+  //beforew the route get("/"), middleware function protect will be run
+  .get(authController.protect, tourController.getAllTours)
   .post(tourController.CreateTour);
 router
   .route('/:id')

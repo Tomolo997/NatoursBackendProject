@@ -43,6 +43,10 @@ const handleCastErrorDB = (err) => {
   const message = `Duplicate field value ${value}. please use antorher value`;
   return new appError(message, 400);
 };
+
+const handleJWTError = (err) => {
+  return new appError('Invalid token. Please login again', 401);
+};
 module.exports = (err, req, res, next) => {
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
@@ -56,6 +60,7 @@ module.exports = (err, req, res, next) => {
     if (error.code === 11000) error = handleDuplicateFieldsDB(error);
     if (error.name === 'ValidationError')
       error = handleValidationErrorDB(error);
+    if (error.name === 'JsonWebTokenError') error = handleJWTError(error);
     sendErrorProduction(error, res);
   }
 };
