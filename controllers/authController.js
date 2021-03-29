@@ -4,6 +4,7 @@ const appError = require('../utils/appError');
 const bycrpt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const catchAsync = require('../utils/catchAsync');
+const { decode } = require('punycode');
 const signToken = (id) => {
   return jwt.sign({ id: id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN,
@@ -16,6 +17,7 @@ exports.singUp = catchAsync(async (req, res) => {
     email: req.body.email,
     password: req.body.password,
     passwordConfirm: req.body.passwordConfirm,
+    passwordChangedAt: req.body.passwordChangedAt,
   });
 
   const token = signToken(newUser._id);
@@ -72,10 +74,27 @@ exports.protect = catchAsync(async (req, res, next) => {
   }
   //2) Verification token
   //all this is sa function that we need to call that returns a promise
+
   const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+
   console.log(decoded);
   //3) Check if user still exists
-  //4) Check if user changed token after token was issued
+  const freshUser = await User.findById(decoded.id);
+  if (!freshUser) {
+    return next(
+      new appError('The user beloning to the user does not exist'),
+      401
+    );
+  }
+  //4) Check if user changed password after token was issued
+
+  if (freshUser.changedPasswordAfter(decoded.iat)) {
+    return new appError(
+      'The user recentiuly changed password, plase login again',
+      401
+    );
+  }
   //only if the previous 4 are correct then the next will be called and then the user gets the routes
+  req.user = freshUser;
   next();
 });
