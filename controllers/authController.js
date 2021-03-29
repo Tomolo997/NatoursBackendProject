@@ -12,12 +12,14 @@ const signToken = (id) => {
 };
 
 exports.singUp = catchAsync(async (req, res) => {
+  console.log(req.body);
   const newUser = await User.create({
     name: req.body.name,
     email: req.body.email,
     password: req.body.password,
     passwordConfirm: req.body.passwordConfirm,
     passwordChangedAt: req.body.passwordChangedAt,
+    role: req.body.role,
   });
 
   const token = signToken(newUser._id);
@@ -98,3 +100,30 @@ exports.protect = catchAsync(async (req, res, next) => {
   req.user = freshUser;
   next();
 });
+
+//authorizazion => check if user is allowed certain resource
+exports.restrictTo = (...roles) => {
+  return (req, res, next) => {
+    //roles is an array , ex.["admin","lead-guide"], role="user"
+    if (!roles.includes(req.user.role)) {
+      return next(
+        new appError('you do not have premmission to perform this action', 403)
+      );
+    }
+    next();
+  };
+};
+
+exports.forgotPassword = catchAsync(async (req, res, next) => {
+  //1) get user based on posted email,
+  const user = await User.findOne({ email: req.body.email });
+  if (!user) {
+    return next(new appError('there is no user with email adress', 404));
+  }
+  //2)generate random token
+  const resetToken = user.createPasswordResetToken();
+  await user.save({ validateBeforeSave: false });
+  //3) send it to users email
+});
+
+exports.resetPassword = (req, res, next) => {};
