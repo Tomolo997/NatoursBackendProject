@@ -204,3 +204,12 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   //4) log user in, send JWT
   createSendToken(user, 200, res);
 });
+
+exports.deleteMe = catchAsync(async (req, res, next) => {
+  await User.findByIdAndUpdate(req.user.id, { active: false });
+
+  res.status(204).json({
+    status: 'message',
+    data: null,
+  });
+});

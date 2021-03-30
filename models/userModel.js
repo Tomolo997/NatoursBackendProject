@@ -41,10 +41,14 @@ const userSchema = mongoose.Schema({
   },
   passwordChangedAt: {
     type: Date,
-    required: [true, 'Add password changed at'],
   },
   passwordResetToken: String,
   passwordResetExpires: Date,
+  active: {
+    type: Boolean,
+    default: true,
+    select: false,
+  },
 });
 //pre saving the data we encryp passowd
 userSchema.pre('save', async function (next) {
@@ -56,6 +60,11 @@ userSchema.pre('save', async function (next) {
   this.password = await bycrpt.hash(this.password, 12);
   //deloete the passwordConfirm field
   this.passwordConfirm = undefined;
+  next();
+});
+
+userSchema.pre(/^find/, async function (next) {
+  this.find({ active: { $ne: false } });
   next();
 });
 
