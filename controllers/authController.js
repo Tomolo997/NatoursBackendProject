@@ -23,16 +23,7 @@ exports.singUp = catchAsync(async (req, res) => {
     passwordChangedAt: req.body.passwordChangedAt,
     role: req.body.role,
   });
-
-  const token = signToken(newUser._id);
-  newUser._id;
-  res.status(201).json({
-    status: 'succes',
-    token,
-    data: {
-      user: newUser,
-    },
-  });
+  createSendToken(newUser, 201, res);
 });
 
 exports.logIn = catchAsync(async (req, res, next) => {
@@ -181,10 +172,25 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
 });
 
 const createSendToken = (user, statusCode, res) => {
+  const cookieOptions = {
+    expires: new Date(
+      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
+    ),
+    httpOnly: true,
+  };
   const token = signToken(user._id);
+  if (process.env.NODE_ENV === 'production') {
+    cookieOptions.secure = true;
+  }
+  res.cookie('jwt', token, cookieOptions);
+  //remove the password from the outpu
+  user.password = undefined;
   res.status(statusCode).json({
     status: 'success',
     token,
+    data: {
+      user,
+    },
   });
 };
 
@@ -203,13 +209,4 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   //SHOULD NOT USER UPDATE for passwords!
   //4) log user in, send JWT
   createSendToken(user, 200, res);
-});
-
-exports.deleteMe = catchAsync(async (req, res, next) => {
-  await User.findByIdAndUpdate(req.user.id, { active: false });
-
-  res.status(204).json({
-    status: 'message',
-    data: null,
-  });
 });

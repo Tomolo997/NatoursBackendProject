@@ -1,23 +1,53 @@
 const express = require('express');
 const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
+const xss = require('xss-clean');
+const hpp = require('hpp');
 const appError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
 const userRouter = require('./routes/userRoutes');
 const tourRouter = require('./routes/tourRoutes');
+const APIFeatures = require('./utils/APIFeatures');
 const app = express();
 //routes => determine on how the application reacts based on the URL request from an client
 
-//middleware
+//global middleware
+
+//security http headers
+app.use(helmet());
+
+//Development logging
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
+//limit request from the same API
+const limiter = rateLimit({
+  max: 100,
+  windowMs: 60 * 60 * 1000,
+  message: 'Too many request from this IP, please try again in an hour',
+});
 
-app.use(express.json());
+app.use('/api', limiter);
+
+//Body parser, reading data from body into req.body
+app.use(express.json({ limit: '10kb' }));
+
+//data sanitization against noSQL query injection
+app.use(mongoSanitize());
+//data sanitization agains XSS
+app.use(xss());
+
+//prevent paramater polution
+app.use(
+  hpp({
+    whitelist: ['duration', 'price'],
+  })
+);
+//serving static files
 app.use(express.static(`${__dirname}/public`));
 //The order of thw middlware is important, so global middlewares are at the beginning
-
-//error route handling
-
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
   next();
