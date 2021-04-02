@@ -34,6 +34,8 @@ exports.getAllTours = catchAsync(async (req, res, next) => {
 exports.getTour = catchAsync(async (req, res, next) => {
   ///:id/:y
   //optional parameters, we add question mark behind them ? => /api/v1/tours/:id/:y?
+
+  //populate => we want to fill up the guides in our model
   const tour = await Tour.findById(req.params.id);
   if (!tour) {
     return next(new appError('No Tour found with that ID ', 404));

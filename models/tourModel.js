@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const slugify = require('slugify');
+const User = require('./userModel');
 const tourSchema = new mongoose.Schema(
   {
     name: {
@@ -105,6 +106,13 @@ const tourSchema = new mongoose.Schema(
         day: Number,
       },
     ],
+    guides: [
+      {
+        type: mongoose.Schema.ObjectId,
+        //establish reference
+        ref: 'User',
+      },
+    ],
   },
   //options for schema
   //each time the JSON is send, the virtuals must be true
@@ -127,6 +135,17 @@ tourSchema.pre('save', function (next) {
   next();
 });
 
+// //before we create or save => .Insert many does not run !
+//EMBEDDING
+// tourSchema.pre('save', async function (next) {
+//   //We loop through each element and find the id and save them to array of guides, but they are saved as promises so we have to resovle all the promises
+//   const guidesPromises = this.guides.map(async (id) => await User.findById(id));
+
+//   this.guides = await Promise.all(guidesPromises);
+
+//   next();
+// });
+
 // tourSchema.pre('save', function (next) {
 //   console.log('will save document');
 //   next();
@@ -144,6 +163,17 @@ tourSchema.pre('save', function (next) {
 tourSchema.pre(/^find/, function (next) {
   this.find({ secretTour: { $ne: true } });
   this.start = Date.now();
+  next();
+});
+
+tourSchema.pre(/^find/, function (next) {
+  //queryy middleware
+
+  //all the find queries will always populate the guides before finding
+  this.populate({
+    path: 'guides',
+    select: '-__v -passwordChangedAt',
+  });
   next();
 });
 

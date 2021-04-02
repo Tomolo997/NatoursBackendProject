@@ -9,6 +9,7 @@ const appError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
 const userRouter = require('./routes/userRoutes');
 const tourRouter = require('./routes/tourRoutes');
+const reviewRouter = require('./routes/reviewRoutes');
 const APIFeatures = require('./utils/APIFeatures');
 const app = express();
 //routes => determine on how the application reacts based on the URL request from an client
@@ -64,6 +65,7 @@ app.use((req, res, next) => {
 //mounting the routes
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
+app.use('/api/v1/reviews', reviewRouter);
 //after it searched the tourRoutes and userRoutes and it could not be found.
 app.all('*', (req, res, next) => {
   // res.status(404).json({
