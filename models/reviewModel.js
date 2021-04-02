@@ -37,12 +37,15 @@ const reviewSchema = new mongoose.Schema(
 );
 reviewSchema.pre(/^find/, function (next) {
   //queryy middleware
-
+  // this.populate({
+  //   path: 'tour',
+  //   select: 'name',
+  // }).populate({
+  //   path: 'user',
+  //   select: 'name photo',
+  // });
   //all the find queries will always populate the guides before finding
   this.populate({
-    path: 'tour',
-    select: 'name',
-  }).populate({
     path: 'user',
     select: 'name photo',
   });

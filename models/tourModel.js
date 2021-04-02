@@ -113,6 +113,11 @@ const tourSchema = new mongoose.Schema(
         ref: 'User',
       },
     ],
+    //instead of this we will implement the virtual populate
+    // reviews:{
+    //   type:mongoose.Schema.ObjectId,
+    //   ref:"Review"
+    // }
   },
   //options for schema
   //each time the JSON is send, the virtuals must be true
@@ -135,6 +140,12 @@ tourSchema.pre('save', function (next) {
   next();
 });
 
+//Virtual populate
+tourSchema.virtual('reviews', {
+  ref: 'Review',
+  foreignField: 'tour',
+  localField: '_id',
+});
 // //before we create or save => .Insert many does not run !
 //EMBEDDING
 // tourSchema.pre('save', async function (next) {
