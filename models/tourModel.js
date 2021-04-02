@@ -79,6 +79,32 @@ const tourSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    startLoctaion: {
+      //GeoJSON => type and coordinates for mongoose to recognise it is GEO
+      type: {
+        type: String,
+        default: 'Point',
+        //enum means it can only be options in array
+      },
+      //[Number] => we expect the array of numbeers
+      coordinates: [Number],
+      address: String,
+      description: String,
+    },
+    //always need to use array for embedded documents
+    locations: [
+      {
+        type: {
+          type: String,
+          default: 'Point',
+          //enum means it can only be options in array
+        },
+        coordinates: [Number],
+        address: String,
+        description: String,
+        day: Number,
+      },
+    ],
   },
   //options for schema
   //each time the JSON is send, the virtuals must be true
