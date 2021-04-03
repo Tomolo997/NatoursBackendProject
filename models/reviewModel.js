@@ -35,6 +35,9 @@ const reviewSchema = new mongoose.Schema(
     toObject: { virtuals: true },
   }
 );
+//each combination of tour and user now has to be unique
+reviewSchema.index({ tour: 1, user: 1 }, { unique: true });
+
 reviewSchema.pre(/^find/, function (next) {
   //queryy middleware
   // this.populate({
@@ -70,7 +73,7 @@ reviewSchema.statics.calcAverageRatings = async function (tourId) {
   if (stats.length > 0) {
     await Tour.findByIdAndUpdate(tourId, {
       ratingsQuantity: stats[0].nRatings,
-      ratingsAverage: stats[0].averageRating.toFixed(1),
+      ratingsAverage: stats[0].averageRating,
     });
   } else {
     await Tour.findByIdAndUpdate(tourId, {

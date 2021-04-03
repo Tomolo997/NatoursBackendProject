@@ -22,6 +22,9 @@ router
   );
 
 router
+  .route('/tours-within/:distance/center/:latlng/unit/:unit')
+  .get(tourController.getToursWithin);
+router
   .route('/')
   //beforew the route get("/"), middleware function protect will be run
   .get(tourController.getAllTours)

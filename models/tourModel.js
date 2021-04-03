@@ -32,9 +32,11 @@ const tourSchema = new mongoose.Schema(
     },
     ratingsAverage: {
       type: Number,
-      default: 4.5,
       min: [1, 'rating must be above 1 '],
       max: [5, 'rating must be below 5 '],
+      default: 4.5,
+
+      set: (val) => Math.round(val * 10),
     },
     ratingsQuantity: {
       type: Number,
@@ -80,7 +82,7 @@ const tourSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    startLoctaion: {
+    startLocation: {
       //GeoJSON => type and coordinates for mongoose to recognise it is GEO
       type: {
         type: String,
@@ -138,7 +140,7 @@ tourSchema.virtual('durationWeeks').get(function () {
 // tourSchema.index({ price: 1 });
 tourSchema.index({ price: 1, ratingsAverage: 1 });
 tourSchema.index({ slug: 1 });
-
+tourSchema.index({ startLocation: '2dsphere' });
 //DOCUMENT MIDDLWARE
 //before we create or save => .Insert many does not run !
 tourSchema.virtual('reviews', {
