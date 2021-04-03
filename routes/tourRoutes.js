@@ -2,10 +2,11 @@ const express = require('express');
 const tourController = require('../controllers/tourController');
 const router = express.Router();
 const authController = require('../controllers/authController');
-//checks for valid or invalid id
-// router.param('id', tourController.checkID);
+const reviewRouter = require('../routes/reviewRoutes');
 
-//create a check body => if the body contains the name and price property
+//middleware => for this specific route, we want to use review router
+//we neeed to enable the reveiew router to have access to :tourID
+router.use('/:tourID/reviews', reviewRouter);
 
 router
   .route('/top-5-cheap')
@@ -28,5 +29,9 @@ router
     authController.restrictTo('admin', 'lead-guide'),
     tourController.deleteTour
   );
+
+//post /tour/21351dfs/reviews => this nested route means we can access reviews resource on the tour resource.
+
+//get tour/23123/reviews => get reviews of the id of tour
 
 module.exports = router;

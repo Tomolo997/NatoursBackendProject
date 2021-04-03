@@ -142,7 +142,7 @@ tourSchema.pre('save', function (next) {
 
 //Virtual populate
 tourSchema.virtual('reviews', {
-  ref: 'Review',
+  ref: 'Review', 
   foreignField: 'tour',
   localField: '_id',
 });

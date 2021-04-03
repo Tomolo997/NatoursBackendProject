@@ -54,3 +54,7 @@ reviewSchema.pre(/^find/, function (next) {
 
 const Review = mongoose.model('Review', reviewSchema);
 module.exports = Review;
+
+//post /tour/21351dfs/reviews => this nested route means we can access reviews resource on the tour resource.
+
+//get tour/23123/reviews => get reviews of the id of tour
