@@ -202,10 +202,10 @@ tourSchema.post(/^find/, function (docs, next) {
 });
 
 //AGGREWGATION MIDDLWARE
-tourSchema.pre('aggregate', function (next) {
-  this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
-  next();
-});
+// tourSchema.pre('aggregate', function (next) {
+//   this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
+//   next();
+// });
 //creata  model out of the mongoose
 const Tour = mongoose.model('Tour', tourSchema);
 
