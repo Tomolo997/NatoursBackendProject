@@ -135,17 +135,17 @@ tourSchema.virtual('durationWeeks').get(function () {
 
 //DOCUMENT MIDDLWARE
 //before we create or save => .Insert many does not run !
+tourSchema.virtual('reviews', {
+  ref: 'Review',
+  foreignField: 'tour',
+  localField: '_id',
+});
 tourSchema.pre('save', function (next) {
   this.slug = slugify(this.name, { lower: true });
   next();
 });
 
 //Virtual populate
-tourSchema.virtual('reviews', {
-  ref: 'Review', 
-  foreignField: 'tour',
-  localField: '_id',
-});
 // //before we create or save => .Insert many does not run !
 //EMBEDDING
 // tourSchema.pre('save', async function (next) {

@@ -1,16 +1,20 @@
 const express = require('express');
 const authController = require('../controllers/authController');
-const reviewRoutes = require('../controllers/reviewController');
+const reviewController = require('../controllers/reviewController');
 //we neeed to enable the reveiew router to have access to :tourID mergeParams: true
 const router = express.Router({ mergeParams: true });
 
 router
   .route('/')
-  .get(reviewRoutes.getAllReviews)
+  .get(reviewController.getAllReviews)
   .post(
     authController.protect,
     authController.restrictTo('user'),
-    reviewRoutes.createReview
+    reviewController.setTourAndUserIDs,
+    reviewController.createReview
   );
-
+router
+  .route('/:id')
+  .patch(reviewController.updateReview)
+  .delete(reviewController.deleteReview);
 module.exports = router;

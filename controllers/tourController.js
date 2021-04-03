@@ -2,6 +2,7 @@ const Tour = require('../models/tourModel');
 const APIFeatures = require('../utils/APIFeatures');
 const appError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
+const factory = require('./handlerFactory');
 exports.aliasTopTours = async (req, res, next) => {
   req.query.limit = '5';
   req.query.sort = '-ratingsAverage,price';
@@ -13,7 +14,6 @@ exports.aliasTopTours = async (req, res, next) => {
 
 exports.getAllTours = catchAsync(async (req, res, next) => {
   //execute query
-
   const features = new APIFeatures(Tour.find(), req.query)
     .filter()
     .sort()
@@ -31,62 +31,12 @@ exports.getAllTours = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.getTour = catchAsync(async (req, res, next) => {
-  ///:id/:y
-  //optional parameters, we add question mark behind them ? => /api/v1/tours/:id/:y?
+exports.getTour = factory.getOne(Tour, 'reviews');
 
-  //populate => we want to fill up the guides in our model
-  const tour = await Tour.findById(req.params.id).populate('reviews');
-  if (!tour) {
-    return next(new appError('No Tour found with that ID ', 404));
-  }
-  //findByID => shorthand for Tour.findOne({_id:req.params.id})
-  res.status(200).json({
-    status: 'success',
-    data: {
-      tour: tour,
-    },
-  });
-});
+exports.CreateTour = factory.createOne(Tour);
 
-exports.CreateTour = catchAsnyc(async (req, res, next) => {
-  //create and save in the DATABASE
-  const newTour = await Tour.create(req.body);
-  //Send back the data
-  res.status(201).json({
-    status: 'success',
-    data: {
-      tour: newTour,
-    },
-  });
-});
-
-exports.updateTour = catchAsync(async (req, res, next) => {
-  const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    //when the price is not a number ,when its not it will show the error
-    runValidators: true,
-  });
-  if (!tour) {
-    return next(new appError('No Tour found with that ID ', 404));
-  }
-  res.status(200).json({
-    status: 'success',
-    data: {
-      tour: tour,
-    },
-  });
-});
-exports.deleteTour = catchAsync(async (req, res, next) => {
-  const tour = await Tour.findByIdAndDelete(req.params.id);
-  if (!tour) {
-    return next(new appError('No Tour found with that ID ', 404));
-  }
-  res.status(204).json({
-    status: 'succes',
-    message: 'succesfuly deleted the Tour',
-  });
-});
+exports.updateTour = factory.updateOne(Tour);
+exports.deleteTour = factory.deleteOne(Tour);
 
 //aggregation pipeline => matching and grouping
 //Aggregation pipline => used for calculating the statisitcs in the database collection. => avgPrice, avgRaating, max, min
