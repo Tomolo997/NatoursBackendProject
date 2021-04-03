@@ -133,6 +133,12 @@ tourSchema.virtual('durationWeeks').get(function () {
 
 //MIDDLEWARE
 
+//indexes => this imporves our searching
+//1 ascendin , -1 descending
+// tourSchema.index({ price: 1 });
+tourSchema.index({ price: 1, ratingsAverage: 1 });
+tourSchema.index({ slug: 1 });
+
 //DOCUMENT MIDDLWARE
 //before we create or save => .Insert many does not run !
 tourSchema.virtual('reviews', {

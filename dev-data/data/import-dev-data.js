@@ -32,7 +32,7 @@ const reiews = JSON.parse(
 const importData = async () => {
   try {
     await Tour.create(tours);
-    await User.create(users);
+    await User.create(users, { validateBeforeSave: false });
     await Review.create(reiews);
     console.log('data succesfuly loaded!');
   } catch (error) {
@@ -45,6 +45,8 @@ const importData = async () => {
 const deleteData = async () => {
   try {
     await Tour.deleteMany();
+    await User.deleteMany();
+    await Review.deleteMany();
     console.log('data succesfuly deleted!');
   } catch (error) {
     console.log(error);

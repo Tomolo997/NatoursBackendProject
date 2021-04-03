@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-
+const Tour = require('./tourModel');
 const reviewSchema = new mongoose.Schema(
   {
     review: {
@@ -50,6 +50,55 @@ reviewSchema.pre(/^find/, function (next) {
     select: 'name photo',
   });
   next();
+});
+
+//static method on the schema,
+reviewSchema.statics.calcAverageRatings = async function (tourId) {
+  const stats = await this.aggregate([
+    {
+      //select the tour we want to calculate
+      $match: { tour: tourId },
+    },
+    {
+      $group: {
+        _id: '$tour',
+        nRatings: { $sum: 1 },
+        averageRating: { $avg: '$rating' },
+      },
+    },
+  ]);
+  if (stats.length > 0) {
+    await Tour.findByIdAndUpdate(tourId, {
+      ratingsQuantity: stats[0].nRatings,
+      ratingsAverage: stats[0].averageRating.toFixed(1),
+    });
+  } else {
+    await Tour.findByIdAndUpdate(tourId, {
+      ratingsQuantity: 0,
+      ratingsAverage: 4.5,
+    });
+  }
+};
+
+reviewSchema.post('save', function () {
+  //this points to current review
+
+  this.constructor.calcAverageRatings(this.tour);
+});
+
+reviewSchema.pre(/^findOneAnd/, async function (next) {
+  //goal is to get access to the current review document
+
+  //we save ourReview to the document, so we can use it in the post
+  this.ourReview = await this.findOne();
+  //ourReview is the current document
+  next();
+});
+reviewSchema.post(/^findOneAnd/, async function () {
+  // this.ourReview = await this.findOne(); => does NOT work here,query has already executed
+  //after the query has already finished and the review has updated
+
+  await this.ourReview.constructor.calcAverageRatings(this.ourReview.tour);
 });
 
 const Review = mongoose.model('Review', reviewSchema);
