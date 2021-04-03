@@ -1,5 +1,7 @@
 const fs = require('fs');
 const Tour = require('../../models/tourModel');
+const Review = require('../../models/reviewModel');
+const User = require('../../models/userModel');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 dotenv.config({ path: './config.env' });
@@ -22,10 +24,16 @@ mongoose
 
 //read JSON file
 const tours = JSON.parse(fs.readFileSync(__dirname + '/tours.json', 'utf-8'));
+const users = JSON.parse(fs.readFileSync(__dirname + '/users.json', 'utf-8'));
+const reiews = JSON.parse(
+  fs.readFileSync(__dirname + '/reviews.json', 'utf-8')
+);
 //import data to database
 const importData = async () => {
   try {
     await Tour.create(tours);
+    await User.create(users);
+    await Review.create(reiews);
     console.log('data succesfuly loaded!');
   } catch (error) {
     console.log(error);
