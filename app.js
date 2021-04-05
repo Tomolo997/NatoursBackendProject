@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
@@ -12,13 +13,15 @@ const tourRouter = require('./routes/tourRoutes');
 const reviewRouter = require('./routes/reviewRoutes');
 const APIFeatures = require('./utils/APIFeatures');
 const app = express();
+app.set('view engine', 'pug');
+app.set('views', path.join(__dirname, 'views'));
+app.use(express.static(path.join(__dirname, 'public')));
 //routes => determine on how the application reacts based on the URL request from an client
 
 //global middleware
 
 //security http headers
 app.use(helmet());
-
 //Development logging
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
@@ -47,7 +50,6 @@ app.use(
   })
 );
 //serving static files
-app.use(express.static(`${__dirname}/public`));
 //The order of thw middlware is important, so global middlewares are at the beginning
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
@@ -63,6 +65,12 @@ app.use((req, res, next) => {
 //tours
 
 //mounting the routes
+app.get('/', (req, res) => {
+  res.status(200).render('base', {
+    tour: 'Forest Hiker',
+    user: 'jonas',
+  });
+});
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/reviews', reviewRouter);
