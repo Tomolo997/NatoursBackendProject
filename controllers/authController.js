@@ -209,32 +209,48 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   createSendToken(user, 200, res);
 });
 
-exports.isLoggedIn = catchAsync(async (req, res, next) => {
+exports.isLoggedIn = async (req, res, next) => {
   if (req.cookies.jwt) {
-    token = req.cookies.jwt;
-    //verifys the token
-    const decoded = await promisify(jwt.verify)(
-      req.cookies.jwt,
-      process.env.JWT_SECRET
-    );
+    //we need the try catch because, we wan t to catch the errors loccaly, so we removed catchAsync
+    try {
+      token = req.cookies.jwt;
+      //verifys the token
+      const decoded = await promisify(jwt.verify)(
+        req.cookies.jwt,
+        process.env.JWT_SECRET
+      );
 
-    //3) Check if user still exists
-    const freshUser = await User.findById(decoded.id);
-    if (!freshUser) {
-      next();
+      //3) Check if user still exists
+      const freshUser = await User.findById(decoded.id);
+      if (!freshUser) {
+        next();
+      }
+      //4) Check if user changed password after token was issued
+
+      if (freshUser.changedPasswordAfter(decoded.iat)) {
+        next();
+      }
+
+      //if it comes to here, there is a logged in user
+
+      //each tmeplate will have access to the res.locals
+      res.locals.user = freshUser;
+      return next();
+    } catch (error) {
+      //if there is an error => so no user, we want to go to next middleware,
+      //so bassicaly saying there is no logged in user
+      return next();
     }
-    //4) Check if user changed password after token was issued
-
-    if (freshUser.changedPasswordAfter(decoded.iat)) {
-      next();
-    }
-
-    //if it comes to here, there is a logged in user
-
-    //each tmeplate will have access to the res.locals
-    res.locals.user = freshUser;
-    return next();
   }
   //if there is no cookie
   next();
-});
+};
+
+exports.logout = (req, res) => {
+  res.cookie('jwt', 'null', {
+    expires: new Date(Date.now() + 10 * 1000),
+    httpOnly: true,
+  });
+
+  res.status(200).json({ status: 'success' });
+};
