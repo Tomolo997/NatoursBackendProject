@@ -88,6 +88,7 @@ exports.protect = catchAsync(async (req, res, next) => {
   }
   //only if the previous 4 are correct then the next will be called and then the user gets the routes
   req.user = freshUser;
+  res.locals.user = freshUser;
   next();
 });
 
