@@ -11,6 +11,7 @@ const globalErrorHandler = require('./controllers/errorController');
 const userRouter = require('./routes/userRoutes');
 const tourRouter = require('./routes/tourRoutes');
 const reviewRouter = require('./routes/reviewRoutes');
+const viewRouter = require('./routes/viewRoutes');
 const APIFeatures = require('./utils/APIFeatures');
 const app = express();
 app.set('view engine', 'pug');
@@ -65,12 +66,8 @@ app.use((req, res, next) => {
 //tours
 
 //mounting the routes
-app.get('/', (req, res) => {
-  res.status(200).render('base', {
-    tour: 'Forest Hiker',
-    user: 'jonas',
-  });
-});
+
+app.use('/', viewRouter);
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/reviews', reviewRouter);
