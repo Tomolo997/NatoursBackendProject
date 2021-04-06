@@ -17,8 +17,13 @@ const login = async (email, password) => {
       },
     });
 
-    console.log(res);
+    if (res.data.status === 'success') {
+      alert('Logeed in succesfully');
+      window.setTimeout(() => {
+        location.assign('/');
+      }, 1500);
+    }
   } catch (error) {
-    console.log(error.response.data.message);
+    alert(error.response.data.message);
   }
 };

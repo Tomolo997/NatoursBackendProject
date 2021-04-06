@@ -208,3 +208,33 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   //4) log user in, send JWT
   createSendToken(user, 200, res);
 });
+
+exports.isLoggedIn = catchAsync(async (req, res, next) => {
+  if (req.cookies.jwt) {
+    token = req.cookies.jwt;
+    //verifys the token
+    const decoded = await promisify(jwt.verify)(
+      req.cookies.jwt,
+      process.env.JWT_SECRET
+    );
+
+    //3) Check if user still exists
+    const freshUser = await User.findById(decoded.id);
+    if (!freshUser) {
+      next();
+    }
+    //4) Check if user changed password after token was issued
+
+    if (freshUser.changedPasswordAfter(decoded.iat)) {
+      next();
+    }
+
+    //if it comes to here, there is a logged in user
+
+    //each tmeplate will have access to the res.locals
+    res.locals.user = freshUser;
+    return next();
+  }
+  //if there is no cookie
+  next();
+});
