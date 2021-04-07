@@ -56,7 +56,6 @@ app.use(
 //The order of thw middlware is important, so global middlewares are at the beginning
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
-  console.log(req.cookies);
   next();
 });
 

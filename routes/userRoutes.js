@@ -1,8 +1,10 @@
 const express = require('express');
 const userController = require('../controllers/userController');
 const authController = require('../controllers/authController');
+
 const router = express.Router();
 
+//Non protected routes
 router.post('/signup', authController.singUp);
 router.post('/login', authController.logIn);
 router.get('/logout', authController.logout);
@@ -15,7 +17,13 @@ router.use(authController.protect);
 
 router.patch('/updateMyPassword', authController.updatePassword);
 
-router.patch('/updateMe', userController.updateMe);
+router.patch(
+  '/updateMe',
+  userController.seeMee,
+  userController.uploadUserPhoto,
+  userController.resizeUserPhoto,
+  userController.updateMe
+);
 router.delete('/deleteMe', userController.deleteMe);
 router.get('/me', userController.getMe, userController.getUser);
 
