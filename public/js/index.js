@@ -30,11 +30,9 @@ if (userDataForm) {
   userDataForm.addEventListener('submit', (event) => {
     event.preventDefault();
     const form = new FormData();
-    console.log(form);
     form.append('email', document.getElementById('email').value);
     form.append('name', document.getElementById('name').value);
     form.append('photo', document.getElementById('photo').files[0]);
-    console.log('this is form', form);
     console.log(document.getElementById('photo'));
     updateSettings(form, 'data');
   });

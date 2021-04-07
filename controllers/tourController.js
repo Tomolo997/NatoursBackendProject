@@ -1,6 +1,8 @@
 const Tour = require('../models/tourModel');
 const appError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
+const multer = require('multer');
+const sharp = require('sharp');
 const factory = require('./handlerFactory');
 exports.aliasTopTours = async (req, res, next) => {
   req.query.limit = '5';
@@ -8,8 +10,63 @@ exports.aliasTopTours = async (req, res, next) => {
   req.query.fields = 'name,price,ratingsAverage,summary,difficulty';
   next();
 };
+const multerStorage = multer.memoryStorage();
 
+//multerfilter
+const multerFilter = (req, file, cb) => {
+  //test if the uplaod file is the image
+  if (file.mimetype.startsWith('image')) {
+    cb(null, true);
+  } else {
+    cb(
+      new appError('This is not an image, please uplado only iamge', 400),
+      false
+    );
+  }
+};
+
+const upload = multer({
+  fileFilter: multerFilter,
+  storage: multerStorage,
+});
+
+//middleware out of the
+exports.uploadTourImages = upload.fields;
+[
+  { name: 'imageCover', maxCount: 1 },
+  { name: 'images', maxCount: 3 },
+];
 //create a class for API features
+
+exports.resizeTourImages = catchAsync(async (req, res, next) => {
+  if (!req.files.imageCover || !req.files.images) return next();
+  //req.file.buffer => we can access the photo in memory,because we used multer.memoryStorage();
+  const imageFileName = `tour-${req.params.id}-${Date.now()}-cover.jpeg`;
+
+  await sharp(req.files.imageCover[0].buffer)
+    .resize(2000, 1333)
+    .toFormat('jpeg')
+    .jpeg({ quality: 90 })
+    .toFile('public/img/tours/' + imageFileName);
+
+  req.body.imageCover = imageFileName;
+
+  req.body.images = [];
+
+  await Promise.all(
+    req.files.images.map(async (file, i) => {
+      const filename = `tour-${req.params.id}-${Date.now()}-${i + 1}.jpeg`;
+      await sharp(file.buffer)
+        .resize(2000, 1333)
+        .toFormat('jpeg')
+        .jpeg({ quality: 90 })
+        .toFile('public/img/tours/' + imageFileName);
+      req.body.images.push(filename);
+    })
+  );
+
+  next();
+});
 
 exports.getAllTours = factory.getAll(Tour);
 
