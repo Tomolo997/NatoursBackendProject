@@ -16,27 +16,24 @@ module.exports = class Email {
       return 1;
     }
 
-    return (transporter = nodemailer.createTransport({
-      host: 'smtp.mailtrap.io',
-      port: 2525,
+    const transporter = nodemailer.createTransport({
+      service: 'SendGrid',
       auth: {
-        user: '0be268ca2d57c7',
-        pass: 'fce09ba775a59a',
+        user: process.env.SENDGRID_USERNAME,
+        pass: process.env.SENDGRID_PASSWORD,
       },
-    }));
+    });
+    return transporter;
   }
 
   //send the actual email
   async send(template, subject) {
     //render html based on the pug template
-    const html = pug.renderFile(
-      `${__dirname}/../views/emails/${template}.pug`,
-      {
-        firstName: this.firstName,
-        url: this.url,
-        subject,
-      }
-    );
+    const html = pug.renderFile(`${__dirname}/../views/email/${template}.pug`, {
+      firstName: this.firstName,
+      url: this.url,
+      subject,
+    });
 
     //define the email options
     const emailOptions = {
@@ -53,5 +50,9 @@ module.exports = class Email {
 
   async sendWelcome() {
     await this.send('welcome', 'Welcome to the natours family');
+  }
+
+  async sendPasswordReset() {
+    await this.send('passwordReset', 'valid for only 10 minutes');
   }
 };

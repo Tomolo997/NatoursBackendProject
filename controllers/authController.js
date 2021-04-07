@@ -1,5 +1,5 @@
 const { promisify } = require('util');
-const sendEmail = require('../utils/email');
+const Email = require('../utils/email');
 const User = require('../models/userModel');
 const appError = require('../utils/appError');
 const bycrpt = require('bcryptjs');
@@ -23,6 +23,9 @@ exports.singUp = catchAsync(async (req, res) => {
     passwordChangedAt: req.body.passwordChangedAt,
     role: req.body.role,
   });
+  const url = `${req.protocol}://${req.get('host')}/me`;
+  await new Email(newUser, url).sendWelcome();
+
   createSendToken(newUser, 201, res);
 });
 
@@ -115,18 +118,12 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   const resetToken = user.createPasswordResetToken();
   await user.save({ validateBeforeSave: false });
   //3) send it to users email
-  const resetURL = `${req.protocol}://${req.get(
-    'host'
-  )}/api/vi/users/resetPassword/${resetToken}`;
-  const message = `Fortgot your passwords ? Submit a patch request with your new password and password confint to : ${resetURL}`;
-  console.log(user.email);
-  try {
-    await sendEmail({
-      email: user.email,
-      subject: 'Your password reset token',
-      message,
-    });
 
+  try {
+    const resetURL = `${req.protocol}://${req.get(
+      'host'
+    )}/api/vi/users/resetPassword/${resetToken}`;
+    await new Email(user, resetURL).sendPasswordReset();
     res.status(200).json({
       status: 'success',
       message: 'Token sent to email!',
@@ -145,11 +142,12 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
     .createHash('sha256')
     .update(req.params.token)
     .digest('hex');
-
+  console.log(hashedToken);
   const user = await User.findOne({
     passwordResetToken: hashedToken,
     passwordResetExpires: { $gt: Date.now() },
   });
+
   //if token has not expirde and there is a use,set the new password
   if (!user) {
     return next(new appError('Token is invalid or has expired', 400));
